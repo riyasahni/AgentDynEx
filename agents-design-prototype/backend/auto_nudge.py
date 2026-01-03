@@ -5,6 +5,7 @@ Broadcasts messages to all locations in GPTeam simulation
 import asyncio
 import json
 import os
+import re
 import sys
 from datetime import datetime
 from uuid import uuid4
@@ -23,6 +24,29 @@ try:
 except ImportError as e:
     print(f"Warning: Could not import GPTeam modules: {e}")
     print(f"Make sure GPTEAM_PATH is set correctly in .env")
+
+
+def parse_agent_message(message: str) -> str:
+    """
+    Transform "Have X say 'message'" into "X says: message"
+    
+    Examples:
+        "Have Jordan say 'Present, Professor Smith.'" 
+        -> "JORDAN says: Present, Professor Smith."
+        
+        "Have Sarah say 'I agree with that.'"
+        -> "SARAH says: I agree with that."
+    """
+    # Match pattern: Have [NAME] say '[MESSAGE]' or "MESSAGE"
+    match = re.search(r"Have\s+(\w+)\s+say\s+['\"](.+?)['\"]", message, re.IGNORECASE | re.DOTALL)
+    
+    if match:
+        agent_name = match.group(1).upper()  # Uppercase for emphasis
+        actual_message = match.group(2)
+        return f"{agent_name} says: {actual_message}"
+    
+    # Fallback: return original message if pattern doesn't match
+    return message
 
 
 async def broadcast_to_all_locations(message: str) -> dict:
@@ -148,12 +172,18 @@ async def broadcast_to_all_locations(message: str) -> dict:
             # Create message event for this location
             event_id = str(uuid4())
             
+            # Extract everything after "Solution:" if present
+            if "Solution:" in message:
+                description = message.split("Solution:", 1)[1].strip()
+            else:
+                description = message
+            
             event = {
                 "id": event_id,
                 "agent_id": speaker_agent_id,  # Use real agent ID from simulation
                 "type": "message",
                 "subtype": "human-agent-reply",
-                "description": f"Human said to everyone: '{message}'",
+                "description": description,
                 "location_id": location_id,
                 "timestamp": datetime.now(pytz.utc).isoformat(),
                 "witness_ids": json.dumps([agent["id"] for agent in agents_at_location]),

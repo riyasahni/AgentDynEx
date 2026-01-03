@@ -233,8 +233,8 @@ const Run = () => {
                 sx={{ alignItems: "center" }}
               >
                 <img
-                  src={require("../../../../assets/woman_icon.png")}
-                  style={{ width: "30px", height: "25px" }}
+                  src={require("../../../../assets/monsters-walking.gif")}
+                  style={{ width: "40px", height: "30px" }}
                   alt="running"
                 />
                 <Typography variant="h6" sx={{ fontFamily: "courier" }}>
@@ -248,8 +248,8 @@ const Run = () => {
                 >
                   Stop Running Simulation&nbsp;&nbsp;
                   <img
-                    src={require("../../../../assets/woman_icon.png")}
-                    style={{ width: "35px", height: "25px" }}
+                    src={require("../../../../assets/boo_sad.gif")}
+                    style={{ width: "40px", height: "30px" }}
                     alt="stop"
                   />
                 </Button>{" "}
@@ -263,8 +263,8 @@ const Run = () => {
               >
                 {logs ? "Rerun Simulation" : "Run Simulation"}&nbsp;&nbsp;
                 <img
-                  src={require("../../../../assets/woman_icon.png")}
-                  style={{ width: "30px", height: "25px" }}
+                  src={require("../../../../assets/monsters-walking.gif")}
+                  style={{ width: "40px", height: "30px" }}
                   alt="run"
                 />
               </Button>

@@ -255,14 +255,12 @@ const ContinuousData = ({ parentExpand }: { parentExpand: boolean }) => {
             sx={{
               marginTop: "16px",
               padding: "12px",
-              borderRadius: "8px",
-              backgroundColor: "#FFF0F3",
-              border: autoNudgeEnabled ? "2px solid #FFB6C1" : "1px solid #FFB6C1",
-              boxShadow: autoNudgeEnabled ? "0 0 8px rgba(255, 182, 193, 0.3)" : "none",
+              border: autoNudgeEnabled ? "2px solid #8FB339" : "2px solid #A8C957",
+              backgroundColor: "transparent",
             }}
           >
             <Stack direction="row" spacing={1} alignItems="center" sx={{ marginBottom: "8px" }}>
-              <Typography variant="body2" sx={{ color: "#000" }}>
+              <Typography variant="body1" sx={{ fontWeight: "bold" }}>
                 Auto-Nudge:
               </Typography>
               <Switch
@@ -270,10 +268,10 @@ const ContinuousData = ({ parentExpand }: { parentExpand: boolean }) => {
                 onChange={toggleAutoNudge}
                 sx={{
                   "& .MuiSwitch-switchBase.Mui-checked": {
-                    color: "#FFB6C1",
+                    color: "#8FB339",
                   },
                   "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
-                    backgroundColor: "#FF9FB0",
+                    backgroundColor: "#A8C957",
                   },
                 }}
               />
@@ -281,7 +279,7 @@ const ContinuousData = ({ parentExpand }: { parentExpand: boolean }) => {
                 variant="body2"
                 sx={{
                   fontWeight: "bold",
-                  color: autoNudgeEnabled ? "#FF9FB0" : "#666",
+                  color: autoNudgeEnabled ? "#6D8A2B" : "#666",
                 }}
               >
                 {autoNudgeEnabled ? "ON" : "OFF"}
@@ -292,7 +290,7 @@ const ContinuousData = ({ parentExpand }: { parentExpand: boolean }) => {
               <Typography
                 variant="caption"
                 sx={{
-                  color: "#FF9FB0",
+                  color: "#6D8A2B",
                   fontWeight: "bold",
                   display: "block",
                   marginBottom: "8px",
@@ -312,15 +310,15 @@ const ContinuousData = ({ parentExpand }: { parentExpand: boolean }) => {
               }
               sx={{
                 width: "100%",
-                borderColor: "#FFB6C1",
-                color: "#FF9FB0",
+                borderColor: "#A8C957",
+                color: "#6D8A2B",
                 "&:hover": {
-                  borderColor: "#FF9FB0",
-                  backgroundColor: "#FFF0F3",
+                  borderColor: "#8FB339",
+                  backgroundColor: "rgba(168, 201, 87, 0.1)",
                 },
                 "&:disabled": {
-                  borderColor: "#FFC9D0",
-                  color: "#FFC9D0",
+                  borderColor: "#D4E4B0",
+                  color: "#B8CCA0",
                 },
               }}
             >
@@ -333,15 +331,15 @@ const ContinuousData = ({ parentExpand }: { parentExpand: boolean }) => {
                   marginTop: "8px",
                   padding: "8px",
                   borderRadius: "4px",
-                  backgroundColor: "#FFF0F3",
-                  borderLeft: "3px solid #FFB6C1",
+                  backgroundColor: "rgba(168, 201, 87, 0.1)",
+                  borderLeft: "3px solid #8FB339",
                 }}
               >
                 <Typography variant="caption" sx={{ color: "#4CAF50", display: "block" }}>
                   ✅ Last nudge: {Math.floor((Date.now() - (lastNudgeTime || 0)) / 1000)}s ago
                 </Typography>
-                <Typography variant="caption" sx={{ color: "#FF9FB0", display: "block" }}>
-                  🌸 Message sent to {lastNudgeStatus.total_locations} locations
+                <Typography variant="caption" sx={{ color: "#6D8A2B", display: "block" }}>
+                  🌿 Message sent to {lastNudgeStatus.total_locations} locations
                 </Typography>
               </Box>
             )}
@@ -352,7 +350,7 @@ const ContinuousData = ({ parentExpand }: { parentExpand: boolean }) => {
                 <Typography
                   variant="caption"
                   sx={{
-                    color: "#FFB6C1",
+                    color: "#A8C957",
                     fontStyle: "italic",
                     display: "block",
                     marginTop: "8px",

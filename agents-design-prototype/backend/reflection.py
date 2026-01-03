@@ -601,17 +601,17 @@ def remove_duplicate_elements_from_one_list(elements):
 
 def extract_say_command(dynamic_reflection_text: str) -> str:
     """
-    Extracts the first "say" command from dynamic reflection suggestions.
+    Extracts everything after "Solution:" from dynamic reflection suggestions.
     
     Args:
         dynamic_reflection_text: The dynamic reflection output from get_hijack_recommendation
         
     Returns:
-        The message to say, or empty string if no "say" command found
+        Everything after "Solution:", or empty string if not found
         
     Example:
-        Input: "Problem: X\nSolution: 1. Move Professor to classroom\n2. Have Professor say 'Assignment due now'"
-        Output: "Assignment due now"
+        Input: "Problem: X\nSolution: 1. Have Professor say 'Assignment due now'"
+        Output: "1. Have Professor say 'Assignment due now'"
     """
     print(f"[EXTRACT_SAY] Input text: {dynamic_reflection_text[:300]}...")
     
@@ -619,36 +619,13 @@ def extract_say_command(dynamic_reflection_text: str) -> str:
         print("[EXTRACT_SAY] Text is empty or 'running smoothly', returning empty string")
         return ""
     
-    # Look for patterns like: "Have [Agent] say '[message]'" or "say '[message]'"
-    import re
-    
-    # Pattern 1: Have [Agent] say "[message]"
-    pattern1 = r'Have\s+\w+\s+say\s+["\']([^"\']+)["\']'
-    match = re.search(pattern1, dynamic_reflection_text, re.IGNORECASE)
-    if match:
-        message = match.group(1)
-        print(f"[EXTRACT_SAY] Pattern 1 matched: '{message}'")
+    # Simple string split - no regex
+    if "Solution:" in dynamic_reflection_text:
+        message = dynamic_reflection_text.split("Solution:", 1)[1].strip()
+        print(f"[EXTRACT_SAY] Extracted after 'Solution:': '{message}'")
         return message
     
-    # Pattern 2: Have [Agent] say: [message] (without quotes)
-    pattern2 = r'Have\s+\w+\s+say:?\s+(.+?)(?:\n|$)'
-    match = re.search(pattern2, dynamic_reflection_text, re.IGNORECASE)
-    if match:
-        message = match.group(1).strip()
-        # Remove trailing quotes if present
-        message = message.strip('"\'')
-        print(f"[EXTRACT_SAY] Pattern 2 matched: '{message}'")
-        return message
-    
-    # Pattern 3: [Agent] say "[message]"
-    pattern3 = r'\w+\s+say\s+["\']([^"\']+)["\']'
-    match = re.search(pattern3, dynamic_reflection_text, re.IGNORECASE)
-    if match:
-        message = match.group(1)
-        print(f"[EXTRACT_SAY] Pattern 3 matched: '{message}'")
-        return message
-    
-    print("[EXTRACT_SAY] No patterns matched, returning empty string")
+    print("[EXTRACT_SAY] No 'Solution:' found, returning empty string")
     return ""
 
 

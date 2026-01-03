@@ -470,9 +470,9 @@ const SetMatrix = () => {
                     {MATRIX_CATEGORY_DESCRIPTIONS["AgentsXGrounding"]}
                   </Typography>
                   <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
-                    {AgentsXGrounding.split("\n") // Split the string by newlines
+                    {AgentsXGrounding?.split("\n") // Split the string by newlines
                       .map((line) => `👤 ${line.replace(/^-\s*/, "")}`) // Remove "-" and add "👤 " at the start
-                      .join("\n")}
+                      .join("\n") || ""}
                   </Typography>
                 </TableCell>
                 <TableCell
@@ -490,9 +490,9 @@ const SetMatrix = () => {
                     {MATRIX_CATEGORY_DESCRIPTIONS["ActionsXGrounding"]}
                   </Typography>
                   <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
-                    {ActionsXGrounding.split("\n") // Split the string by newlines
+                    {ActionsXGrounding?.split("\n") // Split the string by newlines
                       .map((line) => `💥 ${line.replace(/^-\s*/, "")}`) // Remove "-" and add "👤 " at the start
-                      .join("\n")}
+                      .join("\n") || ""}
                   </Typography>
                 </TableCell>
                 <TableCell
@@ -510,9 +510,9 @@ const SetMatrix = () => {
                     {MATRIX_CATEGORY_DESCRIPTIONS["LocationsXGrounding"]}
                   </Typography>
                   <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
-                    {LocationsXGrounding.split("\n") // Split the string by newlines
+                    {LocationsXGrounding?.split("\n") // Split the string by newlines
                       .map((line) => `📍 ${line.replace(/^-\s*/, "")}`) // Remove "-" and add "👤 " at the start
-                      .join("\n")}
+                      .join("\n") || ""}
                   </Typography>
                 </TableCell>
                 <TableCell
@@ -530,9 +530,9 @@ const SetMatrix = () => {
                     {MATRIX_CATEGORY_DESCRIPTIONS["MilestonesXGrounding"]}
                   </Typography>
                   <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
-                    {MilestonesXGrounding.split("\n") // Split the string by newlines
+                    {MilestonesXGrounding?.split("\n") // Split the string by newlines
                       .map((line) => `🎯 ${line.replace(/^-\s*/, "")}`) // Remove "-" and add "👤 " at the start
-                      .join("\n")}
+                      .join("\n") || ""}
                   </Typography>
                 </TableCell>
                 <TableCell
@@ -550,9 +550,9 @@ const SetMatrix = () => {
                     {MATRIX_CATEGORY_DESCRIPTIONS["StopConditionXGrounding"]}
                   </Typography>
                   <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
-                    {StopConditionXGrounding.split("\n") // Split the string by newlines
+                    {StopConditionXGrounding?.split("\n") // Split the string by newlines
                       .map((line) => `🛑 ${line.replace(/^-\s*/, "")}`) // Remove "-" and add "👤 " at the start
-                      .join("\n")}
+                      .join("\n") || ""}
                   </Typography>
                 </TableCell>
                 <TableCell
@@ -571,9 +571,9 @@ const SetMatrix = () => {
                   </Typography>
                   <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
                     {failureConditionXGrounding
-                      .split("\n") // Split the string by newlines
+                      ?.split("\n") // Split the string by newlines
                       .map((line) => `❌ ${line.replace(/^-\s*/, "")}`) // Remove "-" and add "👤 " at the start
-                      .join("\n")}
+                      .join("\n") || ""}
                   </Typography>
                 </TableCell>
               </TableRow>
