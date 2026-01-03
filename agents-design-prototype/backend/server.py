@@ -29,6 +29,11 @@ from reflection import (
     remove_duplicate_elements_from_one_list,
 )
 from auto_nudge import send_nudge_sync
+from manual_nudge import (
+    get_agents_and_locations_sync,
+    move_agent_sync,
+    agent_say_sync,
+)
 from time import time
 from run_simulation import (
     delete_child_runs,
@@ -1218,6 +1223,57 @@ def execute_auto_nudge():
             }),
             500,
         )
+
+
+# Manual Nudging Endpoints
+@app.route("/manual_nudge/get_agents_locations", methods=["GET"])
+def manual_nudge_get_agents_locations():
+    """Get all agents grouped by their current locations"""
+    print("calling manual_nudge_get_agents_locations...")
+    try:
+        result = get_agents_and_locations_sync()
+        return jsonify(result), 200
+    except Exception as e:
+        print(f"Error in manual_nudge_get_agents_locations: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/manual_nudge/move_agent", methods=["POST"])
+def manual_nudge_move_agent():
+    """Move an agent to a different location"""
+    print("calling manual_nudge_move_agent...")
+    try:
+        data = request.json
+        agent_id = data.get("agent_id")
+        destination_location_id = data.get("destination_location_id")
+        
+        if not agent_id or not destination_location_id:
+            return jsonify({"success": False, "error": "Missing agent_id or destination_location_id"}), 400
+        
+        result = move_agent_sync(agent_id, destination_location_id)
+        return jsonify(result), 200
+    except Exception as e:
+        print(f"Error in manual_nudge_move_agent: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/manual_nudge/agent_say", methods=["POST"])
+def manual_nudge_agent_say():
+    """Make an agent say something at their current location"""
+    print("calling manual_nudge_agent_say...")
+    try:
+        data = request.json
+        agent_id = data.get("agent_id")
+        message = data.get("message")
+        
+        if not agent_id or not message:
+            return jsonify({"success": False, "error": "Missing agent_id or message"}), 400
+        
+        result = agent_say_sync(agent_id, message)
+        return jsonify(result), 200
+    except Exception as e:
+        print(f"Error in manual_nudge_agent_say: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 #####################################################################################################################################################################################

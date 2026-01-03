@@ -5,6 +5,7 @@ import { SERVER_URL } from "../..";
 import { useAppContext } from "../../hooks/app-context";
 import ChangeLog from "./change-log";
 import Dynamics from "./dynamics-table";
+import ManualNudgePanel from "./manual-nudge";
 import TextField from "../../../../components/TextField";
 import Button from "../../../../components/Button";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
@@ -362,6 +363,8 @@ const ContinuousData = ({ parentExpand }: { parentExpand: boolean }) => {
           </Box>
         </Stack>
       </Stack>
+      <Divider />
+      <ManualNudgePanel />
       <Divider />
       <Stack direction="row" spacing="10px">
         <Stack width="66%">

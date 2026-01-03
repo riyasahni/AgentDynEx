@@ -230,8 +230,13 @@ Please follow these rules while creating the JSON
         2. EXPLICITLY STATE THAT AGENTS CANNOT DISCUSS FOR MORE THAN 3 ROUNDS WITH OTHER AGENTS BEFORE MOVING ON.THEY MUST GET THEIR POINT ACROSS BY THEN.
         3. ALL AGENTS MUST HAVE AN IDEA OF THE FAILURE CONDITIONS SO THEY DONT EXHIBIT THOSE BEHAIORS.
         4. IF THERE ARE MULTIPLE LOCATIONS, ENSURE THAT AGENTS KNOW THEY CAN MOVE TO CERTAIN LOCATIONS AND TELL THEM THE RULES OF THAT LOCATION.
-        5. Do not specify any date or time in the config. ONLY SPEAK BY ROUNDS For example, do not say “wait for 5 minutes”, or “submit before March 16”, or “submit a day early”.
+        5. Do not specify any date or time in the config. ONLY SPEAK BY ROUNDS For example, do not say "wait for 5 minutes", or "submit before March 16", or "submit a day early".
         6. Everything in the action column (ActionsXIdea, ActionsXGrounding) should be incorporated in the directives for each agent. If it has to do with when the simulation stops, it should be in the stop condition.
+        7. **CRITICAL: ALL AGENTS MUST PRIORITIZE HUMAN NUDGES** - Add these directives to EVERY agent:
+            - "You MUST immediately respond when your name is explicitly mentioned in any message."
+            - "Messages from the system, human operators, or external interventions are HIGHEST PRIORITY and require immediate acknowledgment and action."
+            - "When you receive a direct instruction or nudge mentioning your name, you must respond within your next action."
+            - "System messages and human nudges override all other priorities and plans."
 """
 
 # 7. IF THE USER DOES NOT HAVE SOME SORT OF PERSON THAT CAN DRIVE THINGS FORWARD FOR A COMPLEX, MULTI-TURN SIMULATION, SUCH AS AN ELECTION WITH MULTIPLE VOTING ROUNDS, OR A CLASSROOM WITH MULTIPLE ASSIGNMENTS, OR A SWIM TEAM WITH MULIIPLE PRACTICES, then ADD AN OVERSEER OR MODERATOR FIGURE THAT CAN DRIVE THE SIMULATION FORMWARD

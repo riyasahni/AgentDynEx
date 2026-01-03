@@ -187,7 +187,12 @@ async def broadcast_to_all_locations(message: str) -> dict:
                 "location_id": location_id,
                 "timestamp": datetime.now(pytz.utc).isoformat(),
                 "witness_ids": json.dumps([agent["id"] for agent in agents_at_location]),
-                "metadata": json.dumps({"referenced_agent_id": None})  # None for broadcast to everyone
+                "metadata": json.dumps({
+                    "referenced_agent_id": None,
+                    "priority": "urgent",
+                    "is_auto_nudge": True,
+                    "requires_immediate_response": True
+                })
             }
             
             # Insert event into database
