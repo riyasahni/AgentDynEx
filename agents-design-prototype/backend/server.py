@@ -876,6 +876,68 @@ def get_changes():
     )
 
 
+def log_nudge_to_changes(nudge_description: str):
+    """Helper function to log a nudge to the changes file"""
+    print(f"logging nudge: {nudge_description}")
+    current_prototype_folder_path = f"{globals.folder_path}/{globals.current_prototype}"
+    current_run_id_folder_path = find_folder_path(
+        globals.run_id, current_prototype_folder_path
+    )
+    
+    # Load existing changes
+    if file_exists(f"{current_run_id_folder_path}/{globals.CHANGES_FILE_NAME}"):
+        changes_text = read_file(
+            f"{current_run_id_folder_path}/{globals.CHANGES_FILE_NAME}"
+        )
+        changes_data = json.loads(changes_text)
+    else:
+        changes_data = []
+    
+    # Get milestone text safely
+    milestone_text = ""
+    if globals.milestones and str(globals.current_milestone_id) in globals.milestones:
+        milestone_text = globals.milestones[str(globals.current_milestone_id)]
+    
+    # Create nudge entry
+    nudge_entry = {
+        "milestone_id": globals.current_milestone_id,
+        "milestone": milestone_text,
+        "where": "",
+        "what": "",
+        "change": f"🔔 NUDGE: {nudge_description}",
+        "is_nudge": True
+    }
+    
+    changes_data.append(nudge_entry)
+    
+    # Save updated changes
+    create_and_write_file(
+        f"{current_run_id_folder_path}/{globals.CHANGES_FILE_NAME}",
+        json.dumps(changes_data),
+    )
+    
+    return nudge_entry
+
+
+@app.route("/log_nudge", methods=["POST"])
+def log_nudge():
+    print("calling log_nudge...")
+    data = request.json
+    nudge_description = data.get("nudge_description", "")
+    
+    nudge_entry = log_nudge_to_changes(nudge_description)
+    
+    return (
+        jsonify(
+            {
+                "message": "logged nudge",
+                "nudge_entry": nudge_entry,
+            }
+        ),
+        200,
+    )
+
+
 @app.route("/get_iterative_list", methods=["GET"])
 def get_iterative_list():
     print("calling get_static_list...")
@@ -1204,6 +1266,12 @@ def execute_auto_nudge():
             globals.last_nudge_timestamp = current_time
             globals.last_nudge_message = message
             print(f"[AUTO-NUDGE] SUCCESS: Nudge sent successfully to {result.get('total_locations', 0)} locations")
+            
+            # Log the auto-nudge to change log
+            try:
+                log_nudge_to_changes(f"AUTO-NUDGE: {message[:100]}")
+            except Exception as log_error:
+                print(f"[AUTO-NUDGE] Warning: Failed to log nudge: {log_error}")
         else:
             print(f"[AUTO-NUDGE] FAILED: {result.get('error', 'Unknown error')}")
             
@@ -1251,6 +1319,14 @@ def manual_nudge_move_agent():
             return jsonify({"success": False, "error": "Missing agent_id or destination_location_id"}), 400
         
         result = move_agent_sync(agent_id, destination_location_id)
+        
+        # Log the manual nudge if successful
+        if result.get("success"):
+            try:
+                log_nudge_to_changes(f"MANUAL NUDGE: {result.get('message', 'Agent moved')}")
+            except Exception as log_error:
+                print(f"[MANUAL-NUDGE] Warning: Failed to log nudge: {log_error}")
+        
         return jsonify(result), 200
     except Exception as e:
         print(f"Error in manual_nudge_move_agent: {e}")
@@ -1270,6 +1346,14 @@ def manual_nudge_agent_say():
             return jsonify({"success": False, "error": "Missing agent_id or message"}), 400
         
         result = agent_say_sync(agent_id, message)
+        
+        # Log the manual nudge if successful
+        if result.get("success"):
+            try:
+                log_nudge_to_changes(f"MANUAL NUDGE: {result.get('message', 'Agent spoke')}")
+            except Exception as log_error:
+                print(f"[MANUAL-NUDGE] Warning: Failed to log nudge: {log_error}")
+        
         return jsonify(result), 200
     except Exception as e:
         print(f"Error in manual_nudge_agent_say: {e}")
