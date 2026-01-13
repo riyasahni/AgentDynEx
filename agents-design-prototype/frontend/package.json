@@ -2,9 +2,9 @@
   "name": "frontend",
   "version": "0.1.0",
   "private": true,
-  "proxy": "http://127.0.0.1:5000//",
-  "proxy_first_ux_proto": "http://127.0.0.1:5001//",
-  "proxy_second_ux_proto": "http://127.0.0.1:5002//",
+  "proxy": "http://127.0.0.1:5000",
+  "proxy_first_ux_proto": "http://127.0.0.1:5001",
+  "proxy_second_ux_proto": "http://127.0.0.1:5002",
   "dependencies": {
     "@babel/standalone": "^7.24.10",
     "@emotion/react": "^11.13.3",

@@ -5,6 +5,7 @@ import { Drawer, Stack, styled, Tooltip, Typography } from "@mui/material";
 import React from "react";
 import Button from "../../../components/Button";
 import Prototypes from "./prototypes";
+import SavedSimulationsDropdown from "./saved-simulations-dropdown";
 import { ChevronLeft, Menu } from "@mui/icons-material";
 import { colors } from "../../../theme/colors";
 
@@ -98,6 +99,7 @@ const Header = () => {
             A G E N T D Y N E X
           </Typography>
         </Stack>
+        <SavedSimulationsDropdown />
         <Tooltip title="Explore a new prototype!">
           <Button
             onClick={() => {

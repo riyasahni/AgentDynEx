@@ -1360,6 +1360,60 @@ def manual_nudge_agent_say():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+@app.route("/get_saved_simulations", methods=["GET"])
+def get_saved_simulations():
+    """Get all saved simulations with their prototypes"""
+    print("calling get_saved_simulations...")
+    import os
+    
+    simulations = []
+    generated_folder = globals.GENERATED_FOLDER_NAME
+    
+    if not os.path.exists(generated_folder):
+        return jsonify({"simulations": []}), 200
+    
+    # Iterate through all folders in generated/
+    for folder_name in os.listdir(generated_folder):
+        folder_path = os.path.join(generated_folder, folder_name)
+        
+        if not os.path.isdir(folder_path):
+            continue
+        
+        # Read prototypes.txt if it exists
+        prototypes_file = os.path.join(folder_path, globals.PROTOTYPES)
+        if file_exists(prototypes_file):
+            try:
+                prototypes = json.loads(read_file(prototypes_file))
+                
+                # Read problem.txt for context
+                problem_file = os.path.join(folder_path, globals.PROBLEM_FILE_NAME)
+                problem = read_file(problem_file) if file_exists(problem_file) else ""
+                
+                # Parse timestamp from folder name (e.g., generations_2026-01-12_19-00-45_uuid)
+                parts = folder_name.split("_")
+                if len(parts) >= 3:
+                    timestamp = f"{parts[1]} {parts[2].replace('-', ':')}"
+                else:
+                    timestamp = ""
+                
+                # Add each prototype as a separate entry
+                for prototype in prototypes:
+                    simulations.append({
+                        "uuid": folder_name,
+                        "prototype": prototype,
+                        "problem": problem,
+                        "timestamp": timestamp
+                    })
+            except Exception as e:
+                print(f"Error reading {folder_name}: {e}")
+                continue
+    
+    # Sort by timestamp (most recent first)
+    simulations.sort(key=lambda x: x["timestamp"], reverse=True)
+    
+    return jsonify({"simulations": simulations}), 200
+
+
 #####################################################################################################################################################################################
 # For testing only. Run curl http://127.0.0.1:5000/set_globals_for_uuid/uuid
 @app.route("/set_globals_for_uuid/<generated_uuid>", methods=["GET"])
