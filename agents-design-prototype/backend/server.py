@@ -1360,6 +1360,70 @@ def manual_nudge_agent_say():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+@app.route("/analyze_change_log", methods=["POST"])
+def analyze_change_log():
+    """Analyze a change log entry with 3 GPT-4o calls"""
+    print("calling analyze_change_log...")
+    try:
+        data = request.json
+        change_summary = data.get("change_summary", "")
+        
+        if not change_summary:
+            return jsonify({"error": "Missing change_summary"}), 400
+        
+        # Get current logs and config
+        current_prototype_folder_path = f"{globals.folder_path}/{globals.current_prototype}"
+        current_run_id_folder_path = find_folder_path(
+            globals.run_id, current_prototype_folder_path
+        )
+        logs = read_file(f"{current_run_id_folder_path}/{globals.LOGS_FILE}")
+        config = read_file(f"{current_prototype_folder_path}/{globals.CONFIG_FILE_NAME}")
+        
+        # Call 1: Summary Context Analysis
+        system_message_1 = """You are analyzing a change event from a multi-agent simulation.
+        Provide 2-3 clear and simple bullet points analyzing this event.
+        Return ONLY the bullet points, nothing else. Each bullet point should start with a dash (-)."""
+        
+        user_message_1 = f"Here's a summary of something that we think happened in these logs: {change_summary}"
+        context_analysis = globals.call_llm(system_message_1, user_message_1)
+        
+        # Call 2: Find Exact Log Excerpt
+        log_words = logs.split()
+        log_words = log_words[-5000:]  # Last 5000 words
+        truncated_logs = " ".join(log_words)
+        
+        system_message_2 = """You are searching for relevant excerpts from simulation logs.
+        Based on the change summary provided, find the EXACT QUOTED log lines that show this event happening.
+        Return the actual log excerpts (word-for-word from the logs) that are relevant to this change.
+        Include multiple log lines if needed to show the full context of the change.
+        If no relevant logs exist, return exactly "DOES NOT EXIST IN LOGS".
+        Do not paraphrase - return the exact text from the logs."""
+        
+        user_message_2 = f"Find the exact log excerpts that show this change happening: {change_summary}\n\nLogs:\n{truncated_logs}"
+        log_excerpt = globals.call_llm(system_message_2, user_message_2)
+        
+        # Call 3: Config Behavior Analysis
+        system_message_3 = """You are analyzing how agent behavior emerges from configuration.
+        Based on the excerpt and config, explain how this behavior could have happened.
+        Provide 2-3 clear and simple bullet points.
+        Return ONLY the bullet points, nothing else. Each bullet point should start with a dash (-)."""
+        
+        user_message_3 = f"Based on this excerpt: {log_excerpt}\n\nAnd this config: {config}\n\nExplain how this behavior could have happened from the config."
+        config_analysis = globals.call_llm(system_message_3, user_message_3)
+        
+        return jsonify({
+            "context_analysis": context_analysis,
+            "log_excerpt": log_excerpt,
+            "config_analysis": config_analysis
+        }), 200
+        
+    except Exception as e:
+        print(f"Error in analyze_change_log: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/get_saved_simulations", methods=["GET"])
 def get_saved_simulations():
     """Get all saved simulations with their prototypes"""

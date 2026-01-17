@@ -147,7 +147,7 @@ def run_simulation(current_run_path, config):
             f'poetry run world > "{log_file}" 2>&1',
         ]
     else:  # macOS / Linux (More portable approach)
-        shell_cmd = f'source ~/.zshrc && conda deactivate && cd {gpteam_path_from_env} && /opt/homebrew/bin/poetry run db-reset && /opt/homebrew/bin/poetry run db-reset && /opt/homebrew/bin/poetry run world> "{log_file}" 2>&1'
+        shell_cmd = f'source ~/.zshrc && conda deactivate && cd {gpteam_path_from_env} && /opt/homebrew/bin/poetry run db-reset && /opt/homebrew/bin/poetry run db-reset && /opt/homebrew/bin/poetry run world --gemini > "{log_file}" 2>&1'
         shell_cmd_escaped = shell_cmd.replace('"', '\\"')
         # macOS Terminal command
         cmd = [
