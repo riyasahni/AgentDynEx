@@ -14,6 +14,10 @@ from reflection import (
     generate_milestones_text,
     generate_new_specific_problems_and_solutions,
     generate_problems_and_solutions,
+    log_changes,
+    log_dynamics,
+    remove_duplicate_elements,
+    remove_duplicate_elements_from_one_list,
 )
 from reflection import generate_summary as generate_LLM_summary
 from reflection import generate_updated_config as generate_updated_config_from_fixes
@@ -22,12 +26,7 @@ from reflection import (
     extract_say_command,
 )
 from reflection import get_status as generate_status
-from reflection import (
-    log_changes,
-    log_dynamics,
-    remove_duplicate_elements,
-    remove_duplicate_elements_from_one_list,
-)
+from reflection import extract_error_details
 from auto_nudge import send_nudge_sync
 from manual_nudge import (
     get_agents_and_locations_sync,
@@ -603,11 +602,13 @@ def get_status():
     Here are the specifics: {globals.matrix["FailureConditionXGrounding"]}
     """
     status = generate_status(logs, problem, failures)
+    error_details = extract_error_details(logs)
     return (
         jsonify(
             {
                 "message": "generated summary",
                 "status": status,
+                "error_details": error_details,
             }
         ),
         200,

@@ -82,7 +82,7 @@ const ChangeLog = ({ expand }: { expand: boolean }) => {
 
   useEffect(() => {
     if (isRunningSimulation) {
-      intervalRef.current = setInterval(fetchChanges, 60000);
+      intervalRef.current = setInterval(fetchChanges, 5000);
     } else {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);

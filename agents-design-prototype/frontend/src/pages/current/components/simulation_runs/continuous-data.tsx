@@ -14,6 +14,7 @@ const ContinuousData = ({ parentExpand }: { parentExpand: boolean }) => {
   const [expand, setExpand] = useState(parentExpand);
 
   const [status, setStatus] = useState("");
+  const [errorDetails, setErrorDetails] = useState("");
   const [dynamicReflection, setDynamicReflection] = useState("");
   
   // Auto-nudge state
@@ -34,6 +35,7 @@ const ContinuousData = ({ parentExpand }: { parentExpand: boolean }) => {
       .then((response) => {
         console.log("/get_status request successful:", response.data);
         setStatus(response.data.status);
+        setErrorDetails(response.data.error_details || "");
       })
       .catch((error) => {
         console.error("Error calling /get_status request:", error);
@@ -233,6 +235,33 @@ const ContinuousData = ({ parentExpand }: { parentExpand: boolean }) => {
             readOnly={true}
             code={true}
           />
+          {errorDetails && (
+            <Box sx={{ marginTop: "16px" }}>
+              <Typography
+                variant="h6"
+                sx={{
+                  fontWeight: "bold",
+                  color: "#d32f2f",
+                }}
+              >
+                ⚠️ Error Details
+              </Typography>
+              <TextField
+                className={"Error Details"}
+                rows={10}
+                value={errorDetails}
+                readOnly={true}
+                code={true}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    borderColor: "#d32f2f",
+                    backgroundColor: "#ffebee",
+                  },
+                  fontFamily: "monospace",
+                }}
+              />
+            </Box>
+          )}
         </Stack>
         <Stack width="60%">
           <Typography

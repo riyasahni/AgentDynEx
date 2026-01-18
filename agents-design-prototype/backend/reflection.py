@@ -629,6 +629,85 @@ def extract_say_command(dynamic_reflection_text: str) -> str:
     return ""
 
 
+def extract_error_details(logs):
+    """
+    Extracts detailed error information from logs when crashes occur.
+    
+    Args:
+        logs: The simulation logs as a string
+        
+    Returns:
+        A string containing the error traceback if found, empty string otherwise
+    """
+    print("calling extract_error_details...")
+    
+    if not logs:
+        return ""
+    
+    # Look for common error patterns
+    error_patterns = [
+        "Traceback (most recent call last):",
+        "Error:",
+        "Exception:",
+        "sqlite3.ProgrammingError",
+        "Cannot operate on a closed database",
+        "RuntimeError:",
+        "ValueError:",
+        "KeyError:",
+        "AttributeError:",
+        "TypeError:"
+    ]
+    
+    # Check if any error pattern exists in logs
+    has_error = any(pattern in logs for pattern in error_patterns)
+    
+    if not has_error:
+        print("No error patterns found in logs")
+        return ""
+    
+    # Extract the last 2000 words to focus on recent errors
+    log_words = logs.split()
+    log_words = log_words[-2000:]
+    truncated_logs = " ".join(log_words)
+    
+    # Find all occurrences of "Traceback" to get full error tracebacks
+    lines = truncated_logs.split('\n')
+    error_blocks = []
+    current_block = []
+    in_traceback = False
+    
+    for line in lines:
+        if "Traceback (most recent call last):" in line:
+            if current_block:
+                error_blocks.append('\n'.join(current_block))
+            current_block = [line]
+            in_traceback = True
+        elif in_traceback:
+            current_block.append(line)
+            # End of traceback is usually an error line (Error:, Exception:, etc.)
+            if any(pattern in line for pattern in ["Error:", "Exception:"]):
+                error_blocks.append('\n'.join(current_block))
+                current_block = []
+                in_traceback = False
+        elif any(pattern in line for pattern in error_patterns):
+            # Capture standalone error messages
+            if not in_traceback:
+                error_blocks.append(line)
+    
+    # Add any remaining block
+    if current_block:
+        error_blocks.append('\n'.join(current_block))
+    
+    # Return the last error block (most recent)
+    if error_blocks:
+        error_detail = error_blocks[-1]
+        print(f"Extracted error details: {error_detail[:200]}...")
+        return error_detail
+    
+    print("No structured error found, returning empty")
+    return ""
+
+
 def generate_updated_config(fixes_to_apply, logs, config):
     print("calling LLM for generate_updated_config...")
     print(f"here are the fixes to apply {str(fixes_to_apply)}")
