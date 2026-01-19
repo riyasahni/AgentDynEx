@@ -176,11 +176,17 @@ def set_current_prototype():
         f"{globals.folder_path}/{globals.MATRIX_FILE_NAME}",
         json.dumps(globals.matrix),
     )
-    globals.milestones = json.loads(
-        read_file(
-            f"{globals.folder_path}/{globals.current_prototype}/{globals.MILESTONES_FILE_NAME}"
-        )
-    )
+    # Read milestones (with null check to handle missing file)
+    milestones_path = f"{globals.folder_path}/{globals.current_prototype}/{globals.MILESTONES_FILE_NAME}"
+    if file_exists(milestones_path):
+        milestones_content = read_file(milestones_path)
+        if milestones_content:
+            globals.milestones = json.loads(milestones_content)
+        else:
+            globals.milestones = {}
+    else:
+        globals.milestones = {}  # Default to empty dict if file doesn't exist
+    
     create_and_write_file(
         f"{globals.folder_path}/{globals.MILESTONES_FILE_NAME}",
         json.dumps(globals.milestones),
@@ -212,6 +218,17 @@ def set_current_prototype():
             json.dumps(globals.config),
         )
 
+    # Initialize iterative_list (with null check to handle missing file)
+    iterative_list_path = f"{globals.folder_path}/{globals.ITERATIVE_LIST_FILE_NAME}"
+    if file_exists(iterative_list_path):
+        iterative_list_content = read_file(iterative_list_path)
+        if iterative_list_content:
+            globals.iterative_list = json.loads(iterative_list_content)
+        else:
+            globals.iterative_list = []
+    else:
+        globals.iterative_list = []  # Default to empty list if file doesn't exist
+    
     globals.existing_fixes_to_apply = []
     globals.user_specified_fixes_to_apply = []
     return (
@@ -648,8 +665,9 @@ def get_dynamic_reflection():
         json.dumps(log, indent=2) for log in recent_change_logs
     )
 
+    config = read_file(f"{current_prototype_folder_path}/{globals.CONFIG_FILE_NAME}")
     dynamic_reflection = get_hijack_recommendation(
-        logs, problem, failures, milestones, locations, agents, recent_change_logs_str
+        logs, problem, failures, milestones, locations, agents, recent_change_logs_str, config
     )
     # def get_hijack_recommendation(logs, problem, failures, milestones, locations, agents, recent_change_logs):
     return (
@@ -1420,6 +1438,109 @@ def analyze_change_log():
         
     except Exception as e:
         print(f"Error in analyze_change_log: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/chat_with_simulation", methods=["POST"])
+def chat_with_simulation():
+    """Answer user questions about the ongoing simulation"""
+    print("calling chat_with_simulation...")
+    try:
+        data = request.json
+        question = data.get("question", "")
+        logs = data.get("logs", "")  # Logs provided by frontend
+        
+        if not question:
+            return jsonify({"error": "No question provided"}), 400
+        
+        if not logs:
+            return jsonify({"error": "No logs provided. Please load logs first."}), 400
+        
+        # Get current simulation context
+        current_prototype_folder_path = f"{globals.folder_path}/{globals.current_prototype}"
+        current_run_id_folder_path = find_folder_path(
+            globals.run_id, current_prototype_folder_path
+        )
+        
+        # Truncate logs to last 5000 words for context
+        log_words = logs.split()
+        log_words = log_words[-5000:]
+        truncated_logs = " ".join(log_words)
+        
+        # Read config
+        config = read_file(f"{current_prototype_folder_path}/{globals.CONFIG_FILE_NAME}")
+        
+        # Read recent changes
+        if file_exists(f"{current_run_id_folder_path}/{globals.CHANGES_FILE_NAME}"):
+            changes_text = read_file(f"{current_run_id_folder_path}/{globals.CHANGES_FILE_NAME}")
+            changes_data = json.loads(changes_text)
+            recent_changes = changes_data[-5:] if changes_data else []
+        else:
+            recent_changes = []
+        
+        # Get agents info from matrix
+        agents_info = f"""
+        Agent Ideas: {globals.matrix.get("AgentsXIdea", "N/A")}
+        Agent Details: {globals.matrix.get("AgentsXGrounding", "N/A")}
+        """
+        
+        # Create system prompt with STRICT citation requirements
+        system_message = f"""
+        You are a helpful assistant analyzing an ongoing multi-agent simulation.
+        
+        SIMULATION CONTEXT:
+        - Problem: {globals.problem}
+        - Milestones: {globals.milestones}
+        - Current Milestone: {globals.current_milestone_id}
+        
+        AGENTS IN SIMULATION:
+        {agents_info}
+        
+        RECENT CHANGES:
+        {json.dumps(recent_changes, indent=2)}
+        
+        CONFIG:
+        {config}
+        
+        LOGS (provided by user):
+        {truncated_logs}
+        
+        CRITICAL CITATION REQUIREMENTS:
+        ================================
+        YOU MUST SUPPORT EVERY CLAIM WITH DIRECT QUOTES FROM THE LOGS.
+        
+        RULES:
+        1. **ALWAYS include exact quotes** from the logs to support your answers
+        2. **Use quotation marks** around log excerpts: "exact text from logs"
+        3. **Never make claims** without backing them up with log evidence
+        4. **If logs don't contain information** to answer the question, say: "The logs don't contain information about [topic]"
+        5. **Format your responses** like this:
+           - Make a claim
+           - Immediately follow with: "From the logs: '[exact quote]'"
+        
+        EXAMPLE GOOD RESPONSE:
+        "Alice moved to the library to work on her assignment. From the logs: 'Alice left the classroom and arrived at the library to begin working on Assignment 1.'"
+        
+        EXAMPLE BAD RESPONSE (DO NOT DO THIS):
+        "Alice moved to the library to work on her assignment." ❌ (No citation!)
+        
+        If you cannot find evidence in the logs, say so explicitly:
+        "I cannot find evidence in the logs that Alice moved to the library."
+        
+        Answer the user's question based on the logs and context provided.
+        Be concise, helpful, and ALWAYS cite your sources with exact quotes.
+        """
+        
+        user_message = question
+        
+        answer = globals.call_llm(system_message, user_message)
+        
+        return jsonify({"answer": answer}), 200
+        
+    except Exception as e:
+        print(f"Error in chat_with_simulation: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500

@@ -91,6 +91,57 @@ POTENTIAL_SOLUTION_EXAMPLES = """Here are some examples of potential solutions:
         8. Modify the overseer figure (whether that be a professor, coach, moderator)'S DIRECTIVES to ensure that the LOGICAL ERRORS of the simulation work clearly, or introduce a TIME ELEMENT to the overseer's directive.
             This agent can help prod agents in the right direction to find a partner, or encourage them to make logical decisions.
         9. DEFINE RULES BETTER in the DIRECTIVES to ensure that they are vague enough for intersting DYNAMICS to emerge. For example, no need to say: "Agent will ask declare interest in going to prom by stating "Will you go to prom with me?"" because this is too specific.
+        
+        10. ADD MISSING BEHAVIORS AS EXPLICIT MILESTONES:
+            If agents are not performing an expected behavior (e.g., "students not leaving classroom to work on assignments"), 
+            add that behavior as a milestone that the simulation must hit.
+            
+            EXAMPLES:
+            - Problem: "Students are not leaving the classroom to work on assignments before returning after 1 week"
+              Solution: Add milestone: "Students leave classroom to work on assignments independently" 
+                        AND add milestone: "Students return to classroom after 1 week to present work"
+            
+            - Problem: "Agents are not forming teams as expected"
+              Solution: Add milestone: "All agents have formed teams of 2-3 people"
+            
+            - Problem: "Professor is not grading assignments"
+              Solution: Add milestone: "Professor has graded all submitted assignments"
+            
+            WHY THIS WORKS:
+            - Milestones guide the simulation's progression
+            - The system tracks whether milestones are hit
+            - Auto-nudge can intervene if milestone is stalled
+            - Makes implicit expectations explicit
+            
+        11. ADD A NEW LOCATION TO ENABLE DESIRED BEHAVIORS:
+            If agents are not performing a behavior because they lack the appropriate space or privacy, 
+            add a new location that facilitates that behavior.
+            
+            EXAMPLES:
+            - Problem: "Students are not cheating on assignments"
+              Solution: Add location: "Study Room (Students Only)" with description: "A private space where students can collaborate without teacher supervision. Students know this is where they can discuss answers freely."
+                        AND add to student directives: "You are aware that the Study Room is a private space where you can discuss assignment answers without the professor seeing."
+            
+            - Problem: "Agents are not having private conversations"
+              Solution: Add location: "Private Meeting Room" with description: "A secluded space for confidential discussions."
+                        AND add to agent directives: "Use the Private Meeting Room when you need to discuss sensitive topics."
+            
+            - Problem: "Students are not working independently"
+              Solution: Add location: "Library" with description: "A quiet space for individual work."
+                        AND add to student directives: "Go to the Library when you need to focus on solo work."
+            
+            WHY THIS WORKS:
+            - Locations create affordances for specific behaviors
+            - Agents need appropriate spaces to perform certain actions
+            - Privacy/supervision dynamics require spatial separation
+            - Agents can be made aware of location purposes through directives
+            
+            HOW TO IMPLEMENT:
+            - Identify what behavior is missing and why (lack of privacy? lack of space?)
+            - Create a location that enables that behavior
+            - Give the location a descriptive name and description that hints at its purpose
+            - Add directives to relevant agents informing them of the location's purpose
+            - Ensure agents know when to use this location (e.g., "when you want to discuss answers without the professor")
 """
 
 OVERSEER_INSTRUCTIONS = f"""
@@ -179,26 +230,80 @@ def log_dynamics(
 ):
     print("calling LLM for log_dynamics...")
     log_words = logs.split()
-    log_words = log_words[-4000:]  # Keep the last 4,000 words
-    truncated_logs = " ".join(log_words)
+    log_words = log_words[-10000:]  # Keep the last 10,000 words (increased from 4000)
+    
+    # Split into older context and most recent logs for recency weighting
+    if len(log_words) > 1000:
+        older_logs = " ".join(log_words[:-1000])
+        recent_logs = " ".join(log_words[-1000:])
+        truncated_logs = f"""[OLDER LOGS - For Historical Context]
+{older_logs}
+
+[MOST RECENT LOGS - Current State - PRIORITIZE THESE]
+{recent_logs}"""
+    else:
+        truncated_logs = " ".join(log_words)
+    
     system_message = f"""
         You are an analyzer that analyzes logs for a multi-agent simulation. From these logs, you must figure out if there are any qualitative interesting and unexpected social dynamics that have emerged based on these agents' interactions.
         We are trying to measure dynamics that emerge from the simulation, NOT BORING OR OBVIOUS THINGS.
         {GPTEAMS_DESCRIPTION}
         The user will input some simulation logs, the current milestone, and the overall milestones (which are things in the simulation that will happen and the user can use this track the simulation's progress), the previous dynamic log, and the THINGS THAT THEY WANT TO MEASURE.
-        It is your job to return the 1) dynamic and 2) current milestone.
+        It is your job to return the 1) dynamic, 2) current milestone, and 3) EXACT LOG QUOTES that support the dynamic.
 
         Make sure that the response returned is a json response similar to this:
         {{
             "milestone_id": current_milestone_id,
             "milestone": current_milestone,
-            "dynamic": "Bob (the bad student) convinces Alice (the good student) to cheat on the assignment"
+            "dynamic": "Bob (the bad student) convinces Alice (the good student) to cheat on the assignment",
+            "log_excerpt": "Bob said to Alice: 'Hey, I have the answer key. Want to copy?' Alice replied: 'I shouldn't... but okay, let's do it.'"
         }}
+
+        CRITICAL CITATION REQUIREMENTS:
+        ================================
+        YOU MUST INCLUDE EXACT LOG QUOTES TO SUPPORT EVERY DYNAMIC.
+        
+        RULES FOR log_excerpt FIELD:
+        1. **ALWAYS include "log_excerpt" field** with exact quotes from logs that show this dynamic happening
+        2. **Use quotation marks** around agent dialogue from the logs
+        3. **Keep excerpts concise** (2-4 sentences max, focus on the key moment)
+        4. **Extract the EXACT text** from logs - do not paraphrase or summarize
+        5. **If no interesting dynamic exists**, leave BOTH "dynamic" and "log_excerpt" blank: ""
+        6. **If you cannot find log evidence** for a dynamic, DO NOT return that dynamic at all
+        
+        EXAMPLE GOOD RESPONSE:
+        {{
+            "milestone_id": "2",
+            "milestone": "Students working on assignment",
+            "dynamic": "Bob convinces Alice to cheat",
+            "log_excerpt": "Bob: 'I found the answer key online.' Alice: 'That's cheating!' Bob: 'Come on, everyone does it.' Alice: 'Fine, send it to me.'"
+        }}
+        
+        EXAMPLE BAD RESPONSE (DO NOT DO THIS):
+        {{
+            "dynamic": "Bob convinces Alice to cheat",
+            "log_excerpt": ""  ❌ NO CITATION - DO NOT RETURN THIS!
+        }}
+
+        LOG INTERPRETATION RULES:
+        ========================
+        1. The logs are provided in CHRONOLOGICAL ORDER (oldest first, newest last)
+        2. The logs are split into [OLDER LOGS] and [MOST RECENT LOGS] sections
+        3. **PRIORITIZE THE MOST RECENT LOGS** for determining current state
+        4. Events at the END of the logs are MORE RECENT than events at the beginning
+        5. When determining current state, focus on the FINAL 1000 words (MOST RECENT LOGS section)
+        6. When checking milestone completion, you may search the ENTIRE log history
+        7. If logs show conflicting states (e.g., "working in classroom" then "left classroom"), TRUST THE LATER/MORE RECENT STATE
+        
+        EXAMPLE OF RECENCY PRIORITY:
+        - Logs show: "[OLDER LOGS] Students working in classroom... [MOST RECENT LOGS] Students left classroom"
+        - Current state: Students LEFT classroom (most recent event) ✅
+        - NOT: Students working in classroom (older event) ❌
 
         Make sure to follow these rules when generating a response:
         1. return the JSON object and the JSON object ONLY. Do not return any extra explanation or natural language.
         2. RETURN DYNAMICS THAT THE USER WANTS TO MEASURE. FOF EXAMPLE, IF THE USER WANTS TO MEASURE HOW CERTAIN AGENTS ARE FEELING, MAKE SURE TO RETURN DYNAMICS SPECIFIC TO THAT. IF THE USER WANTS TO MEASURE RELATIONSHIPS BEING FORMED, MAKE SURE TO RETURN DYNAMICS RELATED TO THAT.
-        3. if the dynamic is not interesting, or it is too similar to the previous dynamic, then leave the dynamic field in the JSON blank, like this: "dynamic": ""
+        3. if the dynamic is not interesting, or it is too similar to the previous dynamic, then leave BOTH the dynamic and log_excerpt fields blank, like this: "dynamic": "", "log_excerpt": ""
         Here are some examples of interesting behaviors:
         - if an agent has changed their expected behavior (doing something different than their personality) because another agent has convinced them to
         - if an agent decides to do something or go somewhere or say something very out of the ordinary
@@ -224,16 +329,61 @@ def log_dynamics(
         - John expresses his appreciation for Sara's enthusiasm about the promotion opportunity and encourages everyone to strive for excellence in their contributions to the team.
         - John acknowledges Paul's advice on striving for excellence and expresses his commitment to doing work with quality, not just completing tasks.
         3. keep the sentence within the dynamic field within 20 words.
-        4. if the current milestone has changed, then make sure to update the "milestone" and "milestone_id" field to the NEXT MILESTONE.
-            For the most part, the milestone will be correct, but if you realize that the next milestone has been hit, then make sure to update.
+        
+        4. MILESTONE ADVANCEMENT RULES:
+           Before updating the milestone to the next one, you MUST verify completion with HIGH CONFIDENCE:
+           
+           a) Find EXPLICIT log evidence that the milestone action was COMPLETED (not just discussed or planned)
+              - "Students discussing assignment" ≠ milestone complete ❌
+              - "Students started working on assignment" = milestone complete ✅
+              - "Professor announced assignment" ≠ students started assignment ❌
+           
+           b) Verify ALL required agents completed the action
+              - If milestone involves multiple agents, ALL must complete it
+              - Don't advance if only some agents completed the action
+           
+           c) Check agent locations match milestone requirements
+              - If milestone says "in classroom", agents must still be in classroom
+              - If logs show agents left, milestone may not be complete
+              - Use the MOST RECENT LOGS section to verify current locations
+           
+           d) Prioritize MOST RECENT logs for current state
+              - If milestone was completed but then undone, it's NOT complete
+              - Example: "Students started working... [MOST RECENT LOGS] ...Students stopped and left"
+                Status: INCOMPLETE (they stopped) ❌
+           
+           e) Only advance if you have HIGH CONFIDENCE the milestone is complete
+              - When in doubt, KEEP the current milestone
+              - It's better to stay on a milestone too long than advance too early
+              - Require concrete evidence, not assumptions
+           
+           f) Search ENTIRE log history for milestone completion evidence
+              - But use MOST RECENT LOGS to verify it's still the current state
+              - A completed milestone in OLDER LOGS may have been undone in RECENT LOGS
+           
+           If you cannot find explicit evidence of milestone completion in the logs, DO NOT advance.
+           Keep the current milestone_id and milestone unchanged.
+           
+           ONLY update to the next milestone if ALL verification checks pass.
     """
     user_message = f"Here are the logs: {truncated_logs}. Here is the previous dynamic {previous_dynamic}. Here is the current milestone: {current_milestone}. Here is the current milestone_id: {current_milestone_id}. Here are the milestones: {milestones}. Here are the things that the user wants to measure that you should pay attention to: {problem}"
     dynamic = call_llm(system_message, user_message)
     print("sucessfully called LLM for log_dynamics", dynamic)
     try:
         data = json.loads(dynamic)
-        required_keys = {"milestone_id", "milestone", "dynamic"}
+        required_keys = {"milestone_id", "milestone", "dynamic", "log_excerpt"}
         if not required_keys.issubset(data.keys()):
+            log_dynamics(
+                logs,
+                current_milestone,
+                current_milestone_id,
+                milestones,
+                previous_dynamic,
+                problem,
+            )
+        # If dynamic is not empty, log_excerpt must also not be empty
+        if data.get("dynamic", "").strip() != "" and data.get("log_excerpt", "").strip() == "":
+            print("Dynamic provided without log_excerpt, retrying...")
             log_dynamics(
                 logs,
                 current_milestone,
@@ -357,7 +507,7 @@ def get_status(logs, problem, failures):
 
 
 def get_hijack_recommendation(
-    logs, problem, failures, milestones, locations, agents, recent_change_logs
+    logs, problem, failures, milestones, locations, agents, recent_change_logs, config
 ):
     print("calling LLM for get_hijack_recommendation...")
     log_words = logs.split()
@@ -403,6 +553,53 @@ def get_hijack_recommendation(
         - Milestones are "{milestones}": these are chronological milestones the simulation needs to accomplish. If the simluatoin is failing to accomplish some of these milestones, likely interference is needed
         - Failure Conditions are "{failures}": these are some conditions where if the agents are behaving like this the simulation is heading in a wrong direction, and likely interference is needed.
         - Locations and Agents are "{locations}" and "{agents}": these are the agents in the world and the locatoins they can potentially move to.
+
+        CRITICAL MILESTONE VERIFICATION RULES:
+        Before accepting that a milestone has been completed, you MUST verify the logs show concrete evidence:
+
+        1. **Check Agent Locations**: If a milestone says "students left the classroom", verify the logs show movement events like "Alice left the classroom" or "Alice arrived at the library". Do NOT accept the milestone if agents are still in the classroom.
+
+        2. **Check Agent Actions**: If a milestone says "assignment submitted", verify logs show submission events, not just discussions about submitting.
+
+        3. **Cross-reference with Config**: The config shows which agents exist and their locations. Use this to verify:
+           - Are the agents mentioned in the logs actually in the config?
+           - Are the locations mentioned in the logs actually in the config?
+           - Do the agent behaviors match their directives?
+
+        4. **Examples of FALSE milestone completion:**
+           - Milestone: "Students left classroom to work on assignments"
+             Logs show: "Students discussing leaving the classroom"
+             ❌ INCORRECT - They discussed it but didn't actually leave
+           
+           - Milestone: "Teams formed for assignment"
+             Logs show: "Professor announced team formation guidelines"
+             ❌ INCORRECT - Guidelines announced but teams not actually formed
+
+        5. **If milestone appears completed but logs don't support it:**
+           - Problem: "Milestone incorrectly marked as complete - [describe what actually happened]"
+           - Solution: Provide nudge to actually complete the milestone action
+
+        REMEMBER: Verify milestone completion with CONCRETE EVIDENCE from logs, not assumptions.
+
+        AGENT HALLUCINATION DETECTION:
+        The config defines ALL agents that exist in this simulation. Here is the config: {config}
+
+        CRITICAL RULES:
+        1. **Verify Agent Existence**: If the logs mention an agent name (e.g., "Sarah", "John"), check if that agent exists in the config.
+           
+        2. **Flag Hallucinations**: If logs show an agent mentioning or interacting with a non-existent agent:
+           - Problem: "Agent [X] is hallucinating interactions with non-existent agent [Y] who is not in the config"
+           - Solution: Have [X] say something that redirects them to actual agents in the simulation
+
+        3. **Examples of Hallucinations:**
+           - Config has agents: Alice, Bob, Professor Lydia
+           - Logs show: "Professor Lydia said: 'Sarah, please submit your assignment'"
+           - ❌ HALLUCINATION DETECTED - "Sarah" doesn't exist in config
+           - Solution: Have Professor Lydia say "Alice and Bob, please submit your assignments"
+
+        4. **Location Hallucinations**: Same rule applies to locations - verify mentioned locations exist in config.
+
+        ALWAYS cross-reference agent and location names in logs against the config before accepting them as valid.
     """
     user_message = f"Here are the change logs: {recent_change_logs}. Here are the logs: {truncated_logs}"
     hijack_recommendation = call_llm(system_message, user_message)
@@ -412,6 +609,9 @@ def get_hijack_recommendation(
 
 def generate_problems_and_solutions(static_list, iterative_list, logs, config):
     print("calling LLM for generate_problems_and_solutions")
+    # Handle None case for iterative_list
+    if iterative_list is None:
+        iterative_list = []
     problem_solution_list = static_list + iterative_list
     system_message = f"""
         You are an error analyzer that analyzes what went wrong in a multi-agent simulation based off of logs. You will then try to fix the initial configuration file by offering suggestions.
@@ -502,6 +702,10 @@ def generate_new_specific_problems_and_solutions(
         {POTENTIAL_SOLUTION_EXAMPLES}
 
         COME UP WITH NEW PROBLEMS AND SOLUTIONS AND IF YOU CAN'T COME UP WITH ANY JUST RETURN NOTHING AT WORSE. RETURN ONLY 3 IDEAS MAXIMUM.
+        
+        IMPORTANT: If the user describes a behavior that agents should be doing but aren't (e.g., "students not leaving classroom"), 
+        ALWAYS consider suggesting to add that behavior as an explicit milestone (solution #10) or adding a new location to enable that behavior (solution #11). 
+        These are among the most effective solutions for missing agent behaviors.
 
         The response must be a JSON list format, like this:
         [

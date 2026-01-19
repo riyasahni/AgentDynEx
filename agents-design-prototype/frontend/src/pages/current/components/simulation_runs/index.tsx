@@ -4,6 +4,7 @@ import RunsNavBar from "./runs-nav-bar";
 import Run from "./run";
 import { useAppContext } from "../../hooks/app-context";
 import ConfigCreation from "./config_creation";
+import SimulationChatbot from "./simulation-chatbot";
 
 const SimulationRuns = () => {
   const { updateIsLoading, currentPrototype, currentRunId, currentRunTree } =
@@ -13,14 +14,17 @@ const SimulationRuns = () => {
     return <ConfigCreation />;
   }
   return (
-    <Stack direction="row" spacing="20px">
-      <RunsNavBar />
-      {currentRunId !== undefined && currentRunId !== "initial" ? (
-        <Run />
-      ) : (
-        <ConfigCreation />
-      )}
-    </Stack>
+    <>
+      <Stack direction="row" spacing="20px">
+        <RunsNavBar />
+        {currentRunId !== undefined && currentRunId !== "initial" ? (
+          <Run />
+        ) : (
+          <ConfigCreation />
+        )}
+      </Stack>
+      <SimulationChatbot />
+    </>
   );
 };
 

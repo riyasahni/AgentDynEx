@@ -15,6 +15,7 @@ import { useAppContext } from "../../hooks/app-context";
 type DynamicsData = {
   milestone: string;
   dynamic: string;
+  log_excerpt: string;
 };
 
 const Dynamics = ({ expand }: { expand: boolean }) => {
@@ -63,7 +64,7 @@ const Dynamics = ({ expand }: { expand: boolean }) => {
 
   useEffect(() => {
     if (isRunningSimulation) {
-      intervalRef.current = setInterval(fetchDynamics, 60000);
+      intervalRef.current = setInterval(fetchDynamics, 15000);
     } else {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
@@ -92,8 +93,9 @@ const Dynamics = ({ expand }: { expand: boolean }) => {
       <Table>
         <TableHead>
           <TableRow sx={{ backgroundColor: "#4A8AB8" }}>
-            <TableCell sx={{ color: "white" }}>MILESTONE</TableCell>
-            <TableCell sx={{ color: "white" }}>DYNAMICS</TableCell>
+            <TableCell sx={{ color: "white", width: "20%" }}>MILESTONE</TableCell>
+            <TableCell sx={{ color: "white", width: "30%" }}>DYNAMICS</TableCell>
+            <TableCell sx={{ color: "white", width: "50%" }}>LOG EVIDENCE</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -105,8 +107,20 @@ const Dynamics = ({ expand }: { expand: boolean }) => {
 
               return (
                 <TableRow key={index}>
-                  <TableCell>{showMilestone ? row.milestone : ""}</TableCell>
-                  <TableCell>{row.dynamic}</TableCell>
+                  <TableCell sx={{ width: "20%" }}>
+                    {showMilestone ? row.milestone : ""}
+                  </TableCell>
+                  <TableCell sx={{ width: "30%" }}>{row.dynamic}</TableCell>
+                  <TableCell 
+                    sx={{ 
+                      width: "50%",
+                      fontStyle: "italic", 
+                      fontSize: "0.9em",
+                      color: "#555"
+                    }}
+                  >
+                    {row.log_excerpt || "No citation available"}
+                  </TableCell>
                 </TableRow>
               );
             })}
